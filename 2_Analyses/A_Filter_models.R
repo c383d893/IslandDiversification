@@ -52,63 +52,10 @@ dat.start <-  readRDS("data/merge_poll_data_2025.RDS") %>%
   left_join(p.check, by = "entity_ID") %>%
   mutate(pnata = ifelse(is.na(pnata), 0, pnata)) 
 
-# nat dat: 950
-dat.nat <- dat.start %>% filter(flora == "native") %>%
-  filter(!(poll.b == 0 & poll.ab == 0)) %>%
-  mutate(prop.b = poll.b/ (poll.b+ poll.ab))
-
 # non-endemic dat: 479
 dat.nonend <- dat.start %>% filter(flora == "nonendemic") %>%
   filter(!(poll.b == 0 & poll.ab == 0)) %>%
   mutate(prop.b = poll.b/ (poll.b+ poll.ab))
-
-############################
-### NATIVE FILTER MODELS ###
-############################
-
-dat <- dat.nat
-mod <- glmer(cbind(poll.b, poll.ab) ~ entity_class2 + abslatitude +  prec + temp + area + elev_range + (1|entity_class2:entity_ID),
-           data = dat, family = binomial)
-
-# calc residuals
-resids.calc <- resid(mod)
-sp.dat <- dat %>%
-  mutate(resid = resids.calc)
-
-# generate sp object
-sp <- ncf::spline.correlog(x = as.numeric(sp.dat$latitude),
-                           y = as.numeric(sp.dat$longitude),
-                           z = as.numeric(sp.dat$resid),
-                           xmax = 5000, resamp = 100, latlon=TRUE)
-plot(sp)
-
-# rac model
-rac <- Spat.cor.rep(mod,dat,2000)
-mod.rac <- glmer(cbind(poll.b, poll.ab) ~ entity_class2 + abslatitude +  prec + temp + area + elev_range + rac + (1|entity_class2:entity_ID), 
-               data = dat, family = binomial)
-summary(mod.rac)
-
-# full plot proportion 
-ref <- emmeans(mod.rac, pairwise ~ entity_class2, type = "response")
-ref.table <- as.data.frame(ref$emmeans)
-
-plot <- 
-  ggplot(ref.table, aes(entity_class2, prob, color = entity_class2, fill = entity_class2)) +  
-  geom_bar(stat="identity", alpha = 0.7) +
-  geom_point(position=position_dodge(1), size = 4) + 
-  geom_errorbar(aes(ymin=prob-SE, ymax=prob+SE), width = 0.5,size=1, position=position_dodge(1)) +
-  geom_point(data =  dat, aes(entity_class2, prop.b), position = position_jitter(width = 0.2, height = 0),size=2, alpha=0.3) +
-  theme_minimal(base_size = 40) +
-  ylab("Proportion biotically pollinated") +
-  theme(axis.title.x=element_blank()) + 
-  theme(legend.position="none") +
-  colFillf + colScalef +
-  scale_x_discrete(labels = c("Mainland", "Non-oceanic", "Oceanic")) +
-  ylim(0,1) 
-
-png("figures/islandfilter_poll_nat.jpg", width = 10, height = 10, units = 'in', res = 300)
-plot
-dev.off()
 
 ############################
 ### NONEND FILTER MODELS ###
@@ -195,63 +142,10 @@ dat.start <-  readRDS("data/merge_disp_data_2025.RDS") %>%
   left_join(d.check, by = "entity_ID") %>%
   mutate(pnata = ifelse(is.na(pnata), 0, pnata)) 
 
-# nat dat: 953
-dat.nat <- dat.start %>% filter(flora == "native") %>%
-  filter(!(disp.b == 0 & disp.ab == 0)) %>%
-  mutate(prop.b = disp.b/ (disp.b+ disp.ab))
-
 # non-endemic dat: 480
 dat.nonend <- dat.start %>% filter(flora == "nonendemic") %>%
   filter(!(disp.b == 0 & disp.ab == 0)) %>%
   mutate(prop.b = disp.b/ (disp.b+ disp.ab))
-
-############################
-### NATIVE FILTER MODELS ###
-############################
-
-dat <- dat.nat
-mod <- glmer(cbind(disp.b, disp.ab) ~ entity_class2 + abslatitude +  prec + temp + area + elev_range + (1|entity_class2:entity_ID), 
-           data = dat, family = binomial)
-
-# calc residuals
-resids.calc <- resid(mod)
-sp.dat <- dat %>%
-  mutate(resid = resids.calc)
-
-# generate sp object
-sp <- ncf::spline.correlog(x = as.numeric(sp.dat$latitude),
-                           y = as.numeric(sp.dat$longitude),
-                           z = as.numeric(sp.dat$resid),
-                           xmax = 5000, resamp = 100, latlon=TRUE)
-plot(sp)
-
-# rac model
-rac <- Spat.cor.rep(mod,dat,1500)
-mod.rac <- glmer(cbind(disp.b, disp.ab) ~ entity_class2 + abslatitude +  prec + temp + area + elev_range + rac +(1|entity_class2:entity_ID), 
-               data = dat, family = binomial)
-summary(mod.rac)
-
-# full plot proportion 
-ref <- emmeans(mod.rac, pairwise ~ entity_class2, type = "response")
-ref.table <- as.data.frame(ref$emmeans)
-
-plot <- 
-  ggplot(ref.table, aes(entity_class2, prob, color = entity_class2, fill = entity_class2)) +  
-  geom_bar(stat="identity", alpha = 0.7) +
-  geom_point(position=position_dodge(1), size = 4) + 
-  geom_errorbar(aes(ymin=prob-SE, ymax=prob+SE), width = 0.5,size=1, position=position_dodge(1)) +
-  geom_point(data =  dat, aes(entity_class2, prop.b),  position = position_jitter(width = 0.2, height = 0),size=2, alpha=0.3) +
-  theme_minimal(base_size = 40) +
-  ylab("Proportion biotically dispersed") +
-  theme(axis.title.x=element_blank()) + 
-  theme(legend.position="none") +
-  colFillf + colScalef +
-  scale_x_discrete(labels = c("Mainland", "Non-oceanic", "Oceanic")) +
-  ylim(0,1) 
-
-png("figures/islandfilter_disp_nat.jpg", width = 10, height = 10, units = 'in', res = 300)
-plot
-dev.off()
 
 ############################
 ### NONEND FILTER MODELS ###
@@ -338,63 +232,10 @@ dat.start <-  readRDS("data/merge_myc_data_2025.RDS") %>%
   left_join(m.check, by = "entity_ID") %>%
   mutate(pnata = ifelse(is.na(pnata), 0, pnata)) 
 
-# nat dat: 953
-dat.nat <- dat.start %>% filter(flora == "native") %>% 
-  filter(!(AM == 0 & NM == 0)) %>%
-  mutate(prop.AM = AM/ (AM + EM + ORC + NM)) 
-
 # non-endemic dat: 480
 dat.nonend <- dat.start %>% filter(flora == "nonendemic") %>% 
   filter(!(AM == 0 & NM == 0))  %>%
   mutate(prop.AM = AM/ (AM + EM + ORC + NM))
-
-############################
-### NATIVE FILTER MODELS ###
-############################
-
-dat <- dat.nat
-mod <- glmer(cbind(AM, NM) ~ entity_class2 + abslatitude + prec + temp + area + elev_range + (1|entity_class2:entity_ID), 
-           data = dat, family = binomial)
-
-# calc residuals
-resids.calc <- resid(mod)
-sp.dat <- dat %>%
-  mutate(resid = resids.calc)
-
-# generate sp object
-sp <- ncf::spline.correlog(x = as.numeric(sp.dat$latitude),
-                           y = as.numeric(sp.dat$longitude),
-                           z = as.numeric(sp.dat$resid),
-                           xmax = 5000, resamp = 100, latlon=TRUE)
-plot(sp)
-
-# rac model
-rac <- Spat.cor.rep(mod,dat,1000)
-mod.rac <- glmer(cbind(AM, NM) ~ entity_class2 + abslatitude + prec + temp + area + elev_range + rac + (1|entity_class2:entity_ID), 
-               data = dat, family = binomial)
-summary(mod.rac)
-
-# full plot proportion 
-ref <- emmeans(mod.rac, pairwise ~ entity_class2, type = "response")
-ref.table <- as.data.frame(ref$emmeans)
-
-plot <- 
-  ggplot(ref.table, aes(entity_class2, prob, color = entity_class2, fill = entity_class2)) +  
-  geom_bar(stat="identity", alpha = 0.7) +
-  geom_point(position=position_dodge(1), size = 4) + 
-  geom_errorbar(aes(ymin=prob-SE, ymax=prob+SE), width = 0.5,size=1, position=position_dodge(1)) +
-  geom_point(data =  dat, aes(entity_class2, prop.AM), position = position_jitter(width = 0.2, height = 0),size=2, alpha=0.3) +
-  theme_minimal(base_size = 40) +
-  ylab("Proportion AM plant species") +
-  theme(axis.title.x=element_blank()) + 
-  theme(legend.position="none") +
-  colFillf + colScalef +
-  scale_x_discrete(labels = c("Mainland", "Non-oceanic", "Oceanic")) +
-  ylim(0,1) 
-
-png("figures/islandfilter_myc_nat.jpg", width = 10, height = 10, units = 'in', res = 300)
-plot
-dev.off()
 
 ############################
 ### NONEND FILTER MODELS ###
@@ -483,62 +324,10 @@ dat.start <-  readRDS("data/merge_nfix_data_2025.RDS") %>%
   left_join(n.check, by = "entity_ID") %>%
   mutate(pnata = ifelse(is.na(pnata), 0, pnata)) 
 
-# nat dat: 478
-dat.nat <- dat.start %>% filter(flora == "native") %>% 
-  filter(!(nfix == 0 & nonfix == 0)) %>%
-  mutate(prop.nfix = nfix/ (nfix + nonfix))
-
 # non-endemic dat: 477
 dat.nonend <- dat.start %>% filter(flora == "nonendemic") %>% 
   filter(!(nfix == 0 & nonfix == 0)) %>%
   mutate(prop.nfix = nfix/ (nfix + nonfix))
-
-############################
-### NATIVE FILTER MODELS ###
-############################
-
-dat <- dat.nat
-mod <- glmer(cbind(nfix, nonfix) ~ entity_class2 + abslatitude + prec + temp + area + elev_range + (1|entity_class2:entity_ID), data = dat, family = binomial)
-
-# calc residuals
-resids.calc <- resid(mod)
-sp.dat <- dat %>%
-  mutate(resid = resids.calc)
-
-# generate sp object
-sp <- ncf::spline.correlog(x = as.numeric(sp.dat$latitude),
-                           y = as.numeric(sp.dat$longitude),
-                           z = as.numeric(sp.dat$resid),
-                           xmax = 5000, resamp = 100, latlon=TRUE)
-plot(sp)
-
-# rac model
-rac <- Spat.cor.rep(mod,dat,1000)
-mod.rac <- glmer(cbind(nfix, nonfix) ~ entity_class2 + abslatitude + prec + temp + area + elev_range + rac + (1|entity_class2:entity_ID), 
-               data = dat, family = binomial)
-summary(mod.rac)
-
-# full plot proportion 
-ref <- emmeans(mod.rac, pairwise ~ entity_class2, type = "response")
-ref.table <- as.data.frame(ref$emmeans)
-
-plot <- 
-  ggplot(ref.table, aes(entity_class2, prob, color = entity_class2, fill = entity_class2)) +  
-  geom_bar(stat="identity", alpha = 0.7) +
-  geom_point(position=position_dodge(1), size = 4) + 
-  geom_errorbar(aes(ymin=prob-SE, ymax=prob+SE), width = 0.5,size=1, position=position_dodge(1)) +
-  geom_point(data =  dat, aes(entity_class2, prop.nfix), position = position_jitter(width = 0.2, height = 0),size=2, alpha=0.3) +
-  theme_minimal(base_size = 40) +
-  ylab("Proportion Nfixing plant species") +
-  theme(axis.title.x=element_blank()) + 
-  theme(legend.position="none") +
-  colFillf + colScalef +
-  scale_x_discrete(labels = c("Mainland", "Non-oceanic", "Oceanic")) +
-  ylim(0,1) 
-
-png("figures/islandfilter_nfix_nat.jpg", width = 10, height = 10, units = 'in', res = 300)
-plot
-dev.off()
 
 ############################
 ### NONEND FILTER MODELS ###
